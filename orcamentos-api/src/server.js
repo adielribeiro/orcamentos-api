@@ -8,14 +8,13 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = (process.env.FRONTEND_URL || "")
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
   .split(",")
-  .map((item) => item.trim())
-  .filter(Boolean);
+  .map((item) => item.trim());
 
 app.use(
   cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    origin: allowedOrigins,
     credentials: true
   })
 );
