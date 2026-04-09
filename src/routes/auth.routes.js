@@ -9,66 +9,34 @@ dotenv.config();
 
 const router = Router();
 
-function isEmailValido(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-router.post("/register", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
-    }
-
-    if (!isEmailValido(email)) {
-      return res.status(400).json({ message: "E-mail inválido." });
-    }
-
-    if (String(password).length < 6) {
-      return res.status(400).json({ message: "A senha deve ter pelo menos 6 caracteres." });
-    }
-
-    const [existing] = await pool.execute(
-      "SELECT id FROM users WHERE email = ? LIMIT 1",
-      [email]
-    );
-
-    if (existing.length > 0) {
-      return res.status(409).json({ message: "Este e-mail já está cadastrado." });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    await pool.execute(
-      "INSERT INTO users (email, password_hash) VALUES (?, ?)",
-      [email, passwordHash]
-    );
-
-    return res.status(201).json({ message: "Usuário criado com sucesso." });
-  } catch {
-    return res.status(500).json({ message: "Erro ao criar usuário." });
-  }
-});
-
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
     if (!email || !password) {
       return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
     }
 
     const [rows] = await pool.execute(
-      "SELECT id, email, password_hash FROM users WHERE email = ? LIMIT 1",
+      `
+      SELECT id, email, password_hash, role, is_active
+      FROM users
+      WHERE email = ?
+      LIMIT 1
+      `,
       [email]
     );
 
-    if (rows.length === 0) {
+    if (!rows.length) {
       return res.status(401).json({ message: "E-mail ou senha inválidos." });
     }
 
     const user = rows[0];
+
+    if (!user.is_active) {
+      return res.status(403).json({ message: "Usuário desativado." });
+    }
+
     const passwordOk = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordOk) {
@@ -78,7 +46,8 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       {
         sub: user.id,
-        email: user.email
+        email: user.email,
+        role: user.role
       },
       process.env.JWT_SECRET,
       {
@@ -90,21 +59,47 @@ router.post("/login", async (req, res) => {
       token,
       user: {
         id: user.id,
-        email: user.email
+        email: user.email,
+        role: user.role,
+        isActive: !!user.is_active
       }
     });
-  } catch {
+  } catch (error) {
+    console.error("Erro no login:", error);
     return res.status(500).json({ message: "Erro ao fazer login." });
   }
 });
 
 router.get("/me", authRequired, async (req, res) => {
-  return res.json({
-    user: {
-      id: req.user.id,
-      email: req.user.email
+  try {
+    const [rows] = await pool.execute(
+      `
+      SELECT id, email, role, is_active
+      FROM users
+      WHERE id = ?
+      LIMIT 1
+      `,
+      [req.user.id]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
     }
-  });
+
+    const user = rows[0];
+
+    return res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        isActive: !!user.is_active
+      }
+    });
+  } catch (error) {
+    console.error("Erro ao carregar usuário:", error);
+    return res.status(500).json({ message: "Erro ao carregar usuário." });
+  }
 });
 
 export default router;
