@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import quotesRoutes from "./routes/quotes.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import settingsRoutes from "./routes/settings.routes.js";
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.get("/health", (_, res) => {
 app.use("/auth", authRoutes);
 app.use("/quotes", quotesRoutes);
 app.use("/admin", adminRoutes);
+app.use("/settings", settingsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
