@@ -15,7 +15,17 @@ const allowedOrigins = (process.env.FRONTEND_URL || "")
 
 app.use(
   cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    origin(origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origem não permitida pelo CORS."));
+    },
     credentials: true
   })
 );
@@ -31,7 +41,7 @@ app.use("/quotes", quotesRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ message: "Erro interno do servidor." });
+  res.status(500).json({ message: err.message || "Erro interno do servidor." });
 });
 
 const port = Number(process.env.PORT || 80);

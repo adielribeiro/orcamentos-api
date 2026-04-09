@@ -8,13 +8,24 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+const allowedOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
-  .map((item) => item.trim());
+  .map((item) => item.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin(origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origem não permitida pelo CORS."));
+    },
     credentials: true
   })
 );
@@ -30,7 +41,7 @@ app.use("/quotes", quotesRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ message: "Erro interno do servidor." });
+  res.status(500).json({ message: err.message || "Erro interno do servidor." });
 });
 
 const port = Number(process.env.PORT || 80);
