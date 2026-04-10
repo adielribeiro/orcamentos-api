@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import quotesRoutes from "./routes/quotes.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
+import landingConfigRoutes from "./routes/landingConfig.routes.js";
 
 dotenv.config();
 
@@ -25,8 +26,10 @@ const envOrigins = (process.env.FRONTEND_URL || "")
   .filter(Boolean);
 
 const fallbackOrigins = [
+  "https://orcafeito.com.br",
+  "https://www.orcafeito.com.br",
   "https://app.orcafeito.com.br",
-  "http://localhost:5173",
+  "http://localhost:5173"
 ];
 
 const allowedOrigins = envOrigins.length > 0 ? envOrigins : fallbackOrigins;
@@ -52,7 +55,7 @@ const corsOptions = {
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 204,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
@@ -63,7 +66,7 @@ app.get("/health", (req, res) => {
     ok: true,
     frontendUrlRaw: process.env.FRONTEND_URL || null,
     allowedOrigins,
-    originReceived: req.headers.origin || null,
+    originReceived: req.headers.origin || null
   });
 });
 
@@ -71,6 +74,7 @@ app.use("/auth", authRoutes);
 app.use("/quotes", quotesRoutes);
 app.use("/admin", adminRoutes);
 app.use("/settings", settingsRoutes);
+app.use("/landing-config", landingConfigRoutes);
 
 app.use((err, req, res, next) => {
   console.error("[ERROR]", err);
@@ -79,12 +83,12 @@ app.use((err, req, res, next) => {
     return res.status(403).json({
       message: err.message,
       frontendUrlRaw: process.env.FRONTEND_URL || null,
-      allowedOrigins,
+      allowedOrigins
     });
   }
 
   return res.status(500).json({
-    message: err.message || "Erro interno do servidor.",
+    message: err.message || "Erro interno do servidor."
   });
 });
 
