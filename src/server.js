@@ -7,6 +7,7 @@ import quotesRoutes from "./routes/quotes.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
 import landingConfigRoutes from "./routes/landingConfig.routes.js";
+import checkoutRoutes from "./routes/checkout.routes.js";
 
 dotenv.config();
 
@@ -59,7 +60,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "8mb" }));
 
 app.get("/health", (req, res) => {
   return res.status(200).json({
@@ -75,6 +76,7 @@ app.use("/quotes", quotesRoutes);
 app.use("/admin", adminRoutes);
 app.use("/settings", settingsRoutes);
 app.use("/landing-config", landingConfigRoutes);
+app.use("/checkout", checkoutRoutes);
 
 app.use((err, req, res, next) => {
   console.error("[ERROR]", err);
